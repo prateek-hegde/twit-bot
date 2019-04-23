@@ -1,45 +1,56 @@
-const axios = require('axios');
 const config = require("@config/setup");
 const Tweet = require("@models/tweets")
+const Twit = require('twit')
 
+var T = new Twit({
+    consumer_key: config.twitter.CONSUMER_API_KEY,
+    consumer_secret: config.twitter.CONSUMER_SECRETE_KEY,
+    access_token: config.twitter.ACCESS_TOKEN,
+    access_token_secret: config.twitter.SECRETE_ACCESS_TOKEN,
+})
+
+module.exports.allTweets = async (req, res) => {
+    try {
+        var tweets = await Tweet.find()
+    } catch (error) {
+        console.log(error);
+    }
+
+    return res.send(tweets)
+}
 
 module.exports.fetchTweets = async () => {
 
     var keyWords = ['blockchain', 'bitcoin']
 
     for (const i of keyWords) {
-        try {
-            var response = await axios({
-                method: 'get',
-                url: 'https://api.twitter.com/1.1/users/search.json?q=' + i,
-                headers: {
-                    'Authorization': `OAuth oauth_consumer_key=${config.twitter.CONSUMER_API_KEY},oauth_token=${config.twitter.ACCESS_TOKEN},oauth_signature_method="HMAC-SHA1",oauth_timestamp="1556034106",oauth_nonce="sU7c9t68sO9",oauth_version="1.0",oauth_signature="cqtuIq1%2FdV9M%2B4yDbbpNtLtUbhM%3D"`
-                }
-            })
 
-            for (const tweet of response.data) {
-
-
-                await Tweet.create({
-                    tweetId: tweet.id,
-                    created_at: tweet.created_at,
-                    user_name: tweet.name,
-                    description: tweet.description,
-                    tweet_text: tweet.status.text,
-                    retweet_count: tweet.status.retweet_count
-                })
+        T.get('users/search', { q: i }, async (err, data, response) => {
+            if (err) {
+                console.log(err);
 
             }
 
 
+            try {
+                for (const tweet of data) {
+                    await Tweet.create({
+                        tweetId: tweet.id,
+                        created_at: tweet.created_at,
+                        user_name: tweet.name,
+                        description: tweet.description,
+                        tweet_text: tweet.status.text,
+                        retweet_count: tweet.status.retweet_count
+                    })
+                }
 
+            } catch (error) {
+                console.log(error);
 
-        } catch (error) {
-            console.log(error);
+            }
+        });
 
-        }
     }
-
 
 
 
@@ -48,72 +59,64 @@ module.exports.fetchTweets = async () => {
 
 module.exports.countTweets = async (req, res) => {
     var user = req.params.user;
+    T.get('/collections/list', { 'screen_name': user }, async (err, data, response) => {
+        if (err) {
+            return res.send({
+                success: false,
+                message: err
+            })
+        }
 
-    try {
-        var response = await axios({
-            method: 'get',
-            url: 'https://api.twitter.com/1.1/collections/list.json?screen_name=' + user + '&count=1',
-            headers: {
-                'Authorization': `OAuth oauth_consumer_key=${config.twitter.CONSUMER_API_KEY},oauth_token=${config.twitter.ACCESS_TOKEN},oauth_signature_method="HMAC-SHA1",oauth_timestamp="1556037618",oauth_nonce="sU7c9t68sO9",oauth_version="1.0",oauth_signature="cqtuIq1%2FdV9M%2B4yDbbpNtLtUbhM%3D"`
+        if (data.errors) {
+            return res.send({
+                success: false,
+                message: 'User not found'
+            })
+        }
+
+        var obj = data.objects.users;
+        var tweetCounts = 0;
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                tweetCount = obj[key].statuses_count
             }
-        })
-    } catch (error) {
-        console.log(error);
+        }
 
-    }
 
-    if (!response) {
+
         return res.send({
-            success: false,
-            message: 'auth error'
+            success: true,
+            message: `No. of tweets ${tweetCounts}`
         })
-    }
 
-    if (response.data.errors) {
-        return res.send({
-            success: false,
-            message: 'User not found'
-        })
-    }
 
-    return res.send({
-        success: true,
-        message: `No. of tweets ${response.data.objects.users.statuses_count}`
     })
+
+
+
+
+
+
 }
 
 module.exports.sortTweets = async (req, res) => {
-    var tweetId = req.params.tweetId;
+    var user = req.params.user;
 
-    try {
-        var response = await axios({
-            method: 'get',
-            url: 'https://api.twitter.com/1.1/statuses/retweets/' + tweetId,
-            headers: {
-                'Authorization': `OAuth oauth_consumer_key=${config.twitter.CONSUMER_API_KEY},oauth_token=${config.twitter.ACCESS_TOKEN},oauth_signature_method="HMAC-SHA1",oauth_timestamp="1556037618",oauth_nonce="sU7c9t68sO9",oauth_version="1.0",oauth_signature="cqtuIq1%2FdV9M%2B4yDbbpNtLtUbhM%3D"`
-            }
-        })
-    } catch (error) {
-        console.log(error);
+    T.get('statuses/user_timeline', { screen_name: user }, async (err, data, response) => {
 
-    }
+        if (err) {
+            return res.send({
+                success: false,
+                message: err
+            })
+        }
 
-    if (!response) {
-        return res.send({
-            success: false,
-            message: 'auth error'
-        })
-    }
 
-    if (response.data.errors) {
-        return res.send({
-            success: false,
-            message: 'User not found'
-        })
-    }
+        return res.send(data)
 
-    return res.send({
-        success: true,
-        message: `No. of tweets ${response.data.objects.users.statuses_count}`
     })
+
+
+
+
 }
