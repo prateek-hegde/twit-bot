@@ -1,0 +1,35 @@
+{
+  "name": "twitter-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "postinstall": "link-module-alias"
+  },
+  "_moduleAliases": {
+    "@models": "./api/models",
+    "@config": "./config",
+    "@services": "./services",
+    "@routes": "./api/client/routes/",
+    "@clientControllers": "./api/client/controllers"
+  },
+  "author": "Prateek Hegde",
+  "license": "ISC",
+  "dependencies": {
+    "agenda": "^2.0.2",
+    "axios": "^0.18.0",
+    "body-parser": "^1.18.3",
+    "dotenv": "^6.2.0",
+    "express": "^4.16.4",
+    "helmet": "^3.15.0",
+    "module-alias": "^2.1.0",
+    "mongodb": "^3.1.13",
+    "mongoose": "^5.4.9",
+    "morgan": "^1.9.1",
+    "node-cron": "^2.0.3",
+    "oauth": "^0.9.15",
+    "twitter": "^1.7.1"
+  }
+}
