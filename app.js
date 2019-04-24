@@ -30,10 +30,8 @@ const routes = require('@routes/router');
 app.use('/api/', routes);
 
 const controller = require('@clientControllers/twitter_api')
-cron.schedule("*  */1 * * *", async () => {
+cron.schedule("*  */59 * * *", async () => {
     await controller.fetchTweets()
-    console.log('gg');
-    
 
 });
 

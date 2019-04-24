@@ -78,7 +78,7 @@ module.exports.countTweets = async (req, res) => {
         var tweetCounts = 0;
         for (const key in obj) {
             if (obj.hasOwnProperty(key)) {
-                tweetCount = obj[key].statuses_count
+                tweetCounts = obj[key].statuses_count
             }
         }
 
